@@ -70,4 +70,212 @@ public String index() {
 ```
 
 
+1、放置应用的main类
+
+    通常建议将应用的main类放到其他类所在包的顶层(root package)，并将@EnableAutoConfiguration注解到你的main类上，这样就隐式地定义了一个基础的包搜索路径(search package)，以搜索某些特定的注解实体(比如@Service，@Component等)。
+
+    采用root	package方式，你就可以使用@ComponentScan注解而不需要指定basePackage属性，也可以使用@SpringBootApplication注解，只要将main类放到root package中。
+```java
+com	+-	example					
+        +-	myproject
+            +-	Application.java			
+            |
+            +-	domain
+            |	+-	Customer.java
+            |   +-	CustomerRepository.java
+            |
+            +-	service
+            |	+-	CustomerService.java	
+            |
+            +-	web	
+              +-	CustomerController.java
+```
+
+```java
+package	com.example.myproject;
+import	org.springframework.boot.SpringApplication;
+import	org.springframework.boot.autoconfigure.EnableAutoConfiguration; 
+import	org.springframework.context.annotation.ComponentScan; 
+import	org.springframework.context.annotation.Configuration;
+
+@Configuration
+@EnableAutoConfiguration
+@ComponentScan 
+public	class	Application	{
+				public	static	void	main(String[]	args)	{								
+                SpringApplication.run(Application.class,	args);			
+                }
+}
+```java
+
+2、自动配置
+   SpringBoot自动配置（auto-configuration）尝试根据添加的jar依赖自动配置你的Spring应用
+   
+   实现自动配置有两种可选方式，分别是 将	@EnableAutoConfiguration	或	@SpringBootApplication	注解到	@Configuration	类上。
+  注：你应该只添加一个	@EnableAutoConfiguration	注解，通常建议将它添加到主配置类 （primary		@Configuration	）上。
+
+
+3、禁用特定的自动配置项
+   如果发现启用了不想要的自动配置项，你可以使用@EnableAutoConfiguration注解的exclude属性禁用他们：
+```java
+package com.trs.controller;
+
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.context.annotation.Configuration;
+
+/**
+ * Created by wangjie on 2016/10/17 0017.
+ */
+@Configuration
+@EnableAutoConfiguration(exclude = {App.class})
+public class MyConfiguation {
+}
+```
+如果该类不在classpath中，你可以使用该注解的excludeName属性，并指定全限定名来达到 相同效果。最后，你可以通过	spring.autoconfigure.exclude	属性exclude多个自动配置项（一 个自动配置项集合）。
+
+4、Spring Beans和依赖注入
+你可以自由地使用任何标准的Spring框架技术去定义beans和他们注入的依赖。简单起见，我们经常使用@ComponentScan注解搜索beans，并结合@Autowired构造器注入。
+
+如果你遵循以上的建议组织代码结构(将应用的main类放到包的最上层，即root package)，那么你就可以添加@ComponentScan注解而不需要任何参数，所有应用组件（@Component，@Service，@Repository，@Controller等）都会自动注册成Spring Beans.
+```java
+package com.trs.project.service;
+
+
+import com.trs.project.dao.ReviewDao;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+/**
+ * Created by wangjie on 2016/10/17 0017.
+ */
+@Service
+public class ReviewService {
+
+    private ReviewDao reviewDao;
+
+    /**
+     * 通过一个构造器注入获取一个ReviewDao bean，可以通过任何一个方法来获取这样的bean
+     * @param reviewDao
+     */
+    @Autowired
+    public ReviewService(ReviewDao reviewDao){
+        this.reviewDao=reviewDao;
+    }
+}
+```
+
+5、使用@SpringBootApplication注解
+ 很多Spring Boot开发者经常使 用@Configuration，@EnableAutoConfiguration，@ComponentScan注解他们的main类，
+ 由于这些注解如此频繁地一块使用（特别是遵循以上最佳实践的时候），Spring	Boot就提供了一 个方便的@SpringBootApplication注解作为代替。
+
+##### App.java
+```java
+package com.trs.project;
+
+import com.trs.project.service.ReviewService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+/**
+ * Created by wangjie on 2016/10/17 0017.
+ */
+
+@RestController
+//@Configuration
+//@EnableAutoConfiguration
+//@ComponentScan
+@SpringBootApplication  //代替上面三个注解的功能
+public class App {
+
+    @Autowired
+    private ReviewService reviewService;
+
+    @RequestMapping("/")
+    public String hello(){
+        return reviewService.getString();
+    }
+
+    public static void main(String[] args){
+        SpringApplication.run(App.class);
+    }
+}
+```
+
+##### ReviewService.java
+```java
+package com.trs.project.service;
+
+
+import com.trs.project.dao.ReviewDao;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+/**
+ * Created by wangjie on 2016/10/17 0017.
+ */
+@Service
+public class ReviewService {
+
+    private ReviewDao reviewDao;
+
+    /**
+     * 通过一个构造器注入获取一个ReviewDao bean，可以通过任何一个方法来获取这样的bean
+     * @param reviewDao
+     */
+    @Autowired
+    public ReviewService(ReviewDao reviewDao){
+        this.reviewDao=reviewDao;
+    }
+
+    public String getString(){
+        return reviewDao.getString()+"\n Hello here is ReviewService";
+    }
+}
+```
+
+##### ReviewDao.java
+```java
+package com.trs.project.dao;
+
+import org.springframework.stereotype.Repository;
+
+/**
+ * Created by wangjie on 2016/10/17 0017.
+ */
+@Repository
+public class ReviewDao {
+
+    public String getString(){
+        return "Hello Here is ReviewDao";
+    }
+
+}
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 地址：https://course.tianmaying.com/spring-mvc+router#0
